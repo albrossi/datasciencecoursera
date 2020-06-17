@@ -1,0 +1,41 @@
+---
+title: "Data Products - Week 2"
+author: "Alberto Rossi"
+date: "17/06/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overview
+
+Create a web page using R Markdown that features a map created with Leaflet.
+
+Creation: 17/06/2020
+
+Some of the retail stores of the company I work for.
+More than 1200, then here is just a sample =)
+
+# The Map
+
+```{r}
+  library(leaflet)
+  
+  my_map <- leaflet() %>%
+  addTiles()
+  my_map <- my_map %>%
+  addCircles(lat=c(-18.9206545, -15.6156187, -20.5827230, -23.0051481, -21.0946749, -28.2612172, -5.0928280, -21.7242828, -12.6730517, -29.4972461,  -5.7953005, -7.1623846), 
+             lng=c(-48.2793398, -56.0721945, -47.8634522, -46.8390484, -45.5607417, -52.4074214, -42.8135479, -51.0176588, -39.1023044,  -51.9636492, -35.2190577, -34.8385703),
+             weight = 1,
+             radius = 15000,
+             popup="Magalu")
+  
+  my_map
+  
+  
+
+```
+
+
