@@ -1,0 +1,37 @@
+---
+title: "Reproducible Pitch Presentation"
+author: "Alberto Rossi"
+date: "17/06/2020"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Heartbeat Estimator
+
+This is a simple application calculates the number of times a heart beats, considering an average of 60 beats per minute.
+
+
+[Heart Estimator](https://albrossi.shinyapps.io/DataProductApp/)
+
+
+## Application structure
+
+- The application is done in Shiny.
+- Uses a slicer with the measurement in Years, available in the sidebarPanel.
+- The result is presented in the mainPanel, with the estimated heart rate calculation * age informed.
+
+## Calculation
+
+The calculation is made by multiplying the age by the heart rate estimate - which is, on average, used here, 60 per minute.
+
+A format command was used to better display the decimal places, since they are very large numbers!
+
+```{r echo = TRUE}
+    #totalbeats <- input$beats * 31536000
+    #format(totalbeats, format="d", big.mark=',')
+```
+
+# Thank you
