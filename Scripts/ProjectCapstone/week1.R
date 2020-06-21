@@ -121,33 +121,83 @@
   # Exploratory analysis - perform a thorough exploratory analysis of the 
   # data, understanding the distribution of words and relationship between 
   # the words in the corpora.
-  
-  # Tokenization process: breaking the cleaned sample into works 
-  # to better work with than.
-  
-  # 1,2,3 gram tokenizaion: break sample into 1-part-word, 2-parts-word, 3-parts-word
-  UniGramTokenizer = function(data) NGramTokenizer(data, Weka_control(min = 1, max = 1))
-  BiGramTokenizer = function(data) NGramTokenizer(data, Weka_control(min = 2, max = 2))
-  TriGramTokenizer = function(data) NGramTokenizer(data, Weka_control(min = 3, max = 3))
-  
-  #Generate term document matrix for all tokenizers
-  Unigram.tdm = TermDocumentMatrix(sample, control = list(tokenize = UniGramTokenizer))
-  bigram.tdm = TermDocumentMatrix(sample, control = list(tokenize = BiGramTokenizer))
-  trigram.tdm = TermDocumentMatrix(sample, control = list(tokenize = TriGramTokenizer))
-  
+ 
   # Understand frequencies of words and word pairs - build figures and 
   # tables to understand variation in the frequencies of words and word 
   # pairs in the data.
   
-  FreqTerms = findFreqTerms(Unigram.tdm, lowfreq = 100)
-  UniFreq.words = rowSums(as.matrix(Unigram.tdm[FreqTerms,]))
-  UniFreq.words.df = data.frame(UniGram=FreqTerms, Frequency=UniFreq.words)
-  ggplot(UniFreq.words.df, aes(x=reorder(UniGram, Frequency), y=Frequency)) +
+  # Tokenization process: breaking the cleaned sample into works 
+  # to better work with than.
+  
+  # Frequency - 1-part-word
+  # Save part-word object in disk for cache -> better performance
+ 
+  # grams1 <- NGramTokenizer(sample, Weka_control(min = 1, max = 1))
+  # save(grams1, file="./Scripts/ProjectCapstone/grams1.RData")
+  load(file = "./Scripts/ProjectCapstone/grams1.RData")
+  
+  words_dt <- data.frame(table(grams1))
+  words_dt <- words_dt[order(words_dt$Freq,decreasing = TRUE),]
+  words_dt <- words_dt[1:20,]
+  names(words_dt) <- c("Grams","Freq")
+  ggplot(words_dt, aes(x=reorder(Grams, Freq), y=Freq)) +
     geom_bar(stat = "identity") +  coord_flip() +
-    xlab("UniGram words") + ylab("Frequency") +
-    labs(title = "Most frequent Unigram words")
+    xlab("1-part-words") + ylab("Frequency") +
+    labs(title = "Most frequent one-gram-word")
+  
+  # Frequency - 2-part-word
+  # Save part-word object in disk for cache -> better performance
+  
+  #grams2 <- NGramTokenizer(sample, Weka_control(min = 2, max = 2))
+  #save(grams2, file="./Scripts/ProjectCapstone/grams2.RData")
+  load(file = "./Scripts/ProjectCapstone/grams2.RData")
+  
+  words_dt <- data.frame(table(grams2))
+  words_dt <- words_dt[order(words_dt$Freq,decreasing = TRUE),]
+  words_dt <- words_dt[1:20,]
+  names(words_dt) <- c("Grams","Freq")
+  ggplot(words_dt, aes(x=reorder(Grams, Freq), y=Freq)) +
+    geom_bar(stat = "identity") +  coord_flip() +
+    xlab("2-part-words") + ylab("Frequency") +
+    labs(title = "Most frequent two-gram-word")
 
-
-
-
-
+  # Frequency - 3-part-word
+  # Save part-word object in disk for cache -> better performance
+  
+  # grams3 <- NGramTokenizer(sample, Weka_control(min = 3, max = 3))
+  # save(grams3, file="./Scripts/ProjectCapstone/grams3.RData")
+  load(file = "./Scripts/ProjectCapstone/grams3.RData")
+  
+  words_dt <- data.frame(table(grams3))
+  words_dt <- words_dt[order(words_dt$Freq,decreasing = TRUE),]
+  words_dt <- words_dt[1:20,]
+  names(words_dt) <- c("Grams","Freq")
+  ggplot(words_dt, aes(x=reorder(Grams, Freq), y=Freq)) +
+    geom_bar(stat = "identity") +  coord_flip() +
+    xlab("3-part-words") + ylab("Frequency") +
+    labs(title = "Most frequent three-gram-word")
+  
+  # How many unique words do you need in a frequency sorted 
+  # dictionary to cover 50% of all word instances in the 
+  # language? 90%?
+  
+  # Data = NGram Tokenizer
+  # Percentage Cover: words ratio to cover in data 
+  wordCoverage <- function(data, percentageCover){
+    words_dt <- data.frame(table(data))
+    words_dt <- words_dt[order(words_dt$Freq,decreasing = TRUE),]
+    
+    pcover <- percentageCover*sum(words_dt$Freq)
+    nwords <- 0
+    for (i in 1:nrow(words_dt)) {
+      if (nwords >= pcover) {
+        return (i)
+      }
+      nwords <- nwords+words_dt$Freq[i]
+    }
+    
+  }
+  print("How many word to cover 50% of data - one-part-words:")
+  wordCoverage(grams1, 0.5)
+  print("How many word to cover 90% of data - two-word-words:")
+  wordCoverage(grams1, 0.9)
