@@ -18,13 +18,16 @@ The idea is to apply the acquired knowledge and build a solution that, given a w
 
 # Pre requirements
 In order to be able to work with data and analysis, two extremely useful packages for NLP will be used:
-- TM - For NLP
-- RWeka - For Tokenization
+
 
 ```{r}
   library(tm)
   library(RWeka)
   library(tidyverse)
+  library(stylo)
+  library(tokenizers)
+  library(stringr)
+  
   set.seed(1906)
 ```
 
@@ -39,7 +42,7 @@ Database URL: https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera
   # The instructions are to work only with English database. 
   dirsource <- "C:/RStudio/datasciencecoursera/Scripts/ProjectCapstone/final/en_US/"
   fileslist <- list.files(path=dirsource)
-  #  l <- lapply(paste(dirsource, fileslist, sep="/"), function(f) {
+  #  wordslist <- lapply(paste(dirsource, fileslist, sep="/"), function(f) {
   #  fsize <- file.info(f)[1]/1024/1024
   #  con <- file(f, open="r")
   #  lines <- readLines(con)
@@ -50,7 +53,7 @@ Database URL: https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera
   #  return(c(f, format(round(fsize, 2), nsmall=2), length(lines), maxchars, nwords))
   #})
   # save(filesummary, file="./Scripts/ProjectCapstone/filesummary.RData")
-  #filesummary <- data.frame(matrix(unlist(l), nrow=length(l), byrow=T))
+  #filesummary <- data.frame(matrix(unlist(wordslist), nrow=length(wordslist), byrow=T))
   load(file = "C:/RStudio/datasciencecoursera/Scripts/ProjectCapstone/filesummary.RData")
   colnames(filesummary) <- c("File", "Size(MB)", "Number lines", "Longest line", "Number Words")
   filesummary
@@ -104,34 +107,33 @@ Lets sample 2% of each file, and group than in a single object.
 
 # Data cleaning
 
-Basic remove symbols, punctuation, whitespace and blacklisted words (profanity) 
+Basic remove symbols, punctuation, whitespace and blacklisted words (profanity) from our sample data.
 
 ```{r}
-  # Convert unwanted symbols in proper format
-  samplecleaned = iconv(sample, "UTF-8","ASCii","byte")
-  
-  # Generate corpus of data
-  samplecorpus = Corpus(VectorSource(samplecleaned))
+  # Prepare Corpus
+  sample <- VCorpus(VectorSource(sample))
   
   # Remove punctuation
-  corpusdatacleaned = tm_map(samplecorpus,removePunctuation)
-  
-  # Convert data into lower case
-  corpusdatacleaned = tm_map(corpusdatacleaned,content_transformer(tolower))
+  sample = tm_map(sample,removePunctuation)
   
   # Remove numbers from the data
-  corpusdatacleaned = tm_map(corpusdatacleaned,removeNumbers)
+  sample = tm_map(sample,removeNumbers)
   
   # Remove whitespace
-  sample = tm_map(corpusdatacleaned,stripWhitespace)
-  rm(samplecorpus, corpusdatacleaned, samplecleaned)
-  
+  sample = tm_map(sample,stripWhitespace)
+
   # Remove black listed word (Profanity cleaning)
   conn <- file("C:/RStudio/datasciencecoursera/Scripts/ProjectCapstone/blacklist.txt", "rb")
   profanity <- readLines(conn, encoding = "UTF-8")
   close(conn)
   sample <- tm_map(sample, removeWords, profanity) 
   rm(profanity)
+  
+  
+  sampledf <- data.frame(rawtext = sapply(sample, as.character), stringsAsFactors=FALSE)
+  sampledf$textLines <- iconv(sampledf$rawtext, 'UTF-8', 'ASCII')
+  sampledf$textLines <- tolower(sampledf$textLines)
+  sampledf <- sampledf[!is.na(sampledf$textLines),]
 
 ```
 
@@ -142,79 +144,200 @@ Exploratory analysis - perform a thorough exploratory analysis of the data, unde
 Understand frequencies of words and word pairs - build figures and tables to understand variation in the frequencies of words and word pairs in the data.
 
 Tokenization process: breaking the cleaned sample into works to better work with than.
-Lets break in 3 groups: one-part-words, two-part-words, three-part-words.
+
+Lets break in 4 groups: one-part-words, two-part-words, three-part-words and four-part-words.
 
 
 ```{r}
-  # Frequency - 1-part-word
+  # Frequency: 1-part-word
   # Save part-word object in disk for cache -> better performance
-  # grams1 <- NGramTokenizer(sample, Weka_control(min = 1, max = 1))
-  # save(grams1, file="./Scripts/ProjectCapstone/grams1.RData")
-  load(file = "C:/RStudio/datasciencecoursera/Scripts/ProjectCapstone/grams1.RData")
+ 
+  grams1 <- tokenize_ngrams(sampledf$textLines,n=1,n_min = 1)
+  #save(grams1, file="./Scripts/ProjectCapstone/grams1.RData")
+  #load(file = "./Scripts/ProjectCapstone/grams1.RData")
   
-  words_dt <- data.frame(table(grams1))
-  words_dt <- words_dt[order(words_dt$Freq,decreasing = TRUE),]
-  words_dt <- words_dt[1:20,]
-  names(words_dt) <- c("Grams","Freq")
-  ggplot(words_dt, aes(x=reorder(Grams, Freq), y=Freq)) +
+  grams1df <- data.frame(table(unlist(grams1)))
+  grams1df <- grams1df[order(grams1df$Freq,decreasing = TRUE),]
+  grams1plot <- grams1df[1:20,]
+
+  names(grams1plot) <- c("Grams","Freq")
+  ggplot(grams1plot, aes(x=reorder(Grams, Freq), y=Freq)) +
     geom_bar(stat = "identity") +  coord_flip() +
     xlab("1-part-words") + ylab("Frequency") +
     labs(title = "Most frequent one-gram-word")
   
-  # Frequency - 2-part-word
+  # Frequency: 2-part-word
   # Save part-word object in disk for cache -> better performance
+  grams2 <- tokenize_ngrams(sampledf$textLines,n=2,n_min = 2)
   
-  #grams2 <- NGramTokenizer(sample, Weka_control(min = 2, max = 2))
   #save(grams2, file="./Scripts/ProjectCapstone/grams2.RData")
-  load(file = "C:/RStudio/datasciencecoursera/Scripts/ProjectCapstone/grams2.RData")
+  #load(file = "./Scripts/ProjectCapstone/grams2.RData")
   
-  words_dt <- data.frame(table(grams2))
-  words_dt <- words_dt[order(words_dt$Freq,decreasing = TRUE),]
-  words_dt <- words_dt[1:20,]
-  names(words_dt) <- c("Grams","Freq")
-  ggplot(words_dt, aes(x=reorder(Grams, Freq), y=Freq)) +
+  grams2df <- data.frame(table(unlist(grams2)))
+  grams2df <- grams2df[order(grams2df$Freq,decreasing = TRUE),]
+  grams2dfplot <- grams2df[1:20,]
+  
+  names(grams2dfplot) <- c("Grams","Freq")
+  ggplot(grams2dfplot, aes(x=reorder(Grams, Freq), y=Freq)) +
     geom_bar(stat = "identity") +  coord_flip() +
     xlab("2-part-words") + ylab("Frequency") +
     labs(title = "Most frequent two-gram-word")
 
-  # Frequency - 3-part-word
+  # Frequency: 3-part-word
   # Save part-word object in disk for cache -> better performance
   
-  # grams3 <- NGramTokenizer(sample, Weka_control(min = 3, max = 3))
-  # save(grams3, file="./Scripts/ProjectCapstone/grams3.RData")
-  load(file = "C:/RStudio/datasciencecoursera/Scripts/ProjectCapstone/grams3.RData")
+  grams3 <- tokenize_ngrams(sampledf$textLines,n=3,n_min = 3)
+  #save(grams3, file="./Scripts/ProjectCapstone/grams3.RData")
+  #load(file = "./Scripts/ProjectCapstone/grams3.RData")
   
-  words_dt <- data.frame(table(grams3))
-  words_dt <- words_dt[order(words_dt$Freq,decreasing = TRUE),]
-  words_dt <- words_dt[1:20,]
-  names(words_dt) <- c("Grams","Freq")
-  ggplot(words_dt, aes(x=reorder(Grams, Freq), y=Freq)) +
+  grams3df <- data.frame(table(unlist(grams3)))
+  grams3df <- grams3df[order(grams3df$Freq,decreasing = TRUE),]
+  grams3dfplot <- grams3df[1:20,]
+  names(grams3dfplot) <- c("Grams","Freq")
+  ggplot(grams3dfplot, aes(x=reorder(Grams, Freq), y=Freq)) +
     geom_bar(stat = "identity") +  coord_flip() +
     xlab("3-part-words") + ylab("Frequency") +
     labs(title = "Most frequent three-gram-word")
+  
+  
+  # Frequency: 4-part-word
+  # Save part-word object in disk for cache -> better performance
+  
+  grams4 <- tokenize_ngrams(sampledf$textLines,n=4,n_min = 4)
+  #save(grams4, file="./Scripts/ProjectCapstone/grams4.RData")
+  #load(file = "./Scripts/ProjectCapstone/grams4.RData")
+  
+  grams4df <- data.frame(table(unlist(grams4)))
+  grams4df <- grams4df[order(grams4df$Freq,decreasing = TRUE),]
+  grams4dfplot <- grams4df[1:20,]
+  names(grams4dfplot) <- c("Grams","Freq")
+  ggplot(grams4dfplot, aes(x=reorder(Grams, Freq), y=Freq)) +
+    geom_bar(stat = "identity") +  coord_flip() +
+    xlab("3-part-words") + ylab("Frequency") +
+    labs(title = "Most frequent four-gram-word")
 ```
 
 How many unique words do you need in a frequency sorted dictionary to cover 50% of all word instances in the language? 90%?
 
-```{r}
+```{r}  
   # Data = NGram Tokenizer
   # Percentage Cover: words ratio to cover in data 
-  wordCoverage <- function(data, percentageCover){
-    words_dt <- data.frame(table(data))
-    words_dt <- words_dt[order(words_dt$Freq,decreasing = TRUE),]
-    
-    pcover <- percentageCover*sum(words_dt$Freq)
+   wordCoverage <- function(data, percentageCover){
+    pcover <- percentageCover*sum(data$Freq)
     nwords <- 0
-    for (i in 1:nrow(words_dt)) {
+    for (i in 1:nrow(data)) {
       if (nwords >= pcover) {
         return (i)
       }
-      nwords <- nwords+words_dt$Freq[i]
+      nwords <- nwords+data$Freq[i]
     }
-    
   }
   print("How many word to cover 50% of data - one-part-words:")
-  wordCoverage(grams1, 0.5)
+  wordCoverage(grams1df, 0.5)
   print("How many word to cover 90% of data - two-word-words:")
-  wordCoverage(grams1, 0.9)
+  wordCoverage(grams1df, 0.9)
+  
+```
+
+# Building predicting model
+  
+The prediction model will use the preprocessed 2, 3 and 4 gram models to search for the typed words and return the most frequent ones for the suggested completion.
+
+They will be created in function format for easier use in the future application.  
+
+```{r} 
+
+  grams2df <- separate(grams2df, 1, c("word1", "word2"), sep=" ")
+  grams3df <- separate(grams3df, 1, c("word1", "word2", "word3"), sep=" ")
+  grams4df <- separate(grams4df, 1, c("word1", "word2", "word3", "word4"), sep=" ")
+
+```
+
+The following functions will process the base word to try to predict and suggest the next word, based on the sample of worked and clean data.
+
+```{r} 
+
+  # Extract words from sentence inputed and clean for punctuation and numbers
+  extractWordCleaned <- function(words){
+    textInput <- tolower(words)
+    textInput <- removePunctuation(textInput)
+    textInput <- removeNumbers(textInput)
+    textInput <- str_replace_all(textInput, "[^[:alnum:]]", " ")
+    textInput <- stripWhitespace(textInput)
+    textInput <- txt.to.words.ext(textInput, corpus.lang="English.all", preserve.case = TRUE)
+    return(textInput)
+  }
+
+  #Predict next word base on a baseword(s)
+  predictNextWord <- function(baseword)
+  {
+    #Extract and clean input data
+    words <- extractWordCleaned(baseword)
+    wordsC <- length(wordInput)
+    
+    nextWord <- c()
+
+    # Check if input is valid
+    if(wordsC == 0) {
+      prediction <- "No word entered."
+      return (nextWord)
+    }
+    
+    # Try to predict the next word in a sentence of more than four words
+    if(wordsC > 3) {
+      wordInput <- words[(wordsC-2):wordsC]
+      nextWord <- predict4Gram(words[1],words[2],words[3])
+    } else if(wordsC == 3) {  # Try to predict the next word in a sentence of three words
+      nextWord <- predict4Gram(words[1],words[2],words[3])
+    } else if(wordsC == 2) { # Try to predict the next word in a sentence of two words
+      nextWord <- predict3Gram(words[1],words[2])
+    } else if(wordsC == 1) { # Try to predict the next word in a sentence of one word
+      prediction <- predict2Gram(words[1])
+    }
+    
+    # Test if prediction worked 
+    if(length(prediction)==0) {
+      prediction <- "Next word not know from out database."
+    }
+    return (prediction[1:3])
+  }
+  
+   # Try to search the 2gram base for the last input word.
+  predict2Gram <- function(words1) {
+    predictWord <- filter(grams2df,(word1 == words1))$word2
+    return (predictWord)
+  }
+  
+  # Try to search the 3gram base for the last two input words, or, if not, try to search the last entries in 3gram and 2gram bases.
+  predict3Gram <- function(words1,words2) {
+    predictWord <- filter(grams3df,(word1 == words1 & word2 == inputWord2))$word3
+    if(length(predictWord)==0) {
+      predictWord <- filter(grams3df,(word2 == words2))$word3 
+      if(length(predictWord)== 0) {
+        predictWord <- filter(grams3df,(word1 == words2))$word2 
+        if(length(predictWord) ==0 ) {
+          predictWord <- matchTwoGram(words2)
+        }
+      }
+    }
+    return (predictWord)
+  }
+  
+    # Try to search the 4gram base for the last three input words, or, if not, try to search the last two entries in 4gram and 3gram bases.
+  predict4Gram <- function (words1,words2,words3) {
+    predictWord <- filter(grams4df,(word1 == words1 
+                                    & word2 == words2 
+                                    & word3 == words3))$word4
+    if(length(predictWord) == 0) {
+      predictWord <- filter(grams4df,(word2 == words2 & word3 == words3))$word4
+      if(length(predictWord) == 0) {
+        predictWord <- filter(grams4df,(word1 == words2 & word2 == words3))$word3
+        if(length(predictWord) ==0) {
+          predictWord <- matchThreeGram(words2,words3)
+        }
+      }
+    }
+    return (predictWord)
+  }
+ 
 ```

@@ -1,0 +1,59 @@
+---
+title: "Project Capstone - SwiftKey"
+author: "Alberto Rossi"
+date: "23/06/2020"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Overview
+
+The goal of this capstone is to mimic the experience of being a data scientist, exploring an area called Natural Language Processing - NLP.
+
+Objective: build a solution that, given a word initially typed, can return some words that can be used / completed, in order to try to predict which word will be typed next.
+
+This solution contains:
+
+- [Documentation HTML](http://rpubs.com/AlbertoRossi/630825)
+
+- [Application](https://albrossi.shinyapps.io/AppCapstone)
+
+- [The database reference](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip)
+
+
+## Proposed Solution 
+
+1. Database processing, with sampling on the 03 files informed.
+2. Cleaning the sample, removing symbols, punctuation, whitespace and blacklisted words (profanity).
+3. Preparation of 4 word dictionaries: 1 word, 2 words, 3 words and 4 words.
+4. Calculate the frequencies of the terms present in the dictionaries above, sorting with the most used terms.
+5. Try to predict the next word to be typed based on the words ordered by frequency of the dictionaries, according to the length of the entered sentence.
+
+
+## Predicting model
+
+The application was built in Shiny, and includes:
+
+- Field for entering words.
+
+- Return of expected words.
+
+- Percentage of frequency of the term within the sample of the database.
+
+Here we can access for use and testing:
+
+- [Application](https://albrossi.shinyapps.io/AppCapstone)
+
+
+## Conclusions
+
+- The use of a frequency table is very interesting and intuitive, and can be applied to other problems.
+
+- The ease with which Text Mining is handled is surprising, as well as the number of packages that help in the development of a solution.
+
+- A sensitive point of improvement is the actual learning of the data sample. As the user enters more information, it would be very desirable for the application to be able to register these terms in their base, so that the prediction is increasingly better and adapted to the user in question.
+
+
