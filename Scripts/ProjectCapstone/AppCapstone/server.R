@@ -18,6 +18,10 @@ shinyServer(function(input, output) {
         words <- ""
         if (!input$text1 == ""){
             words <- predictNextWord(input$text1)
+            words[5] <- words[3]
+            words[4] <- "   |   "
+            words[3] <- words[2]
+            words[2] <- "   |   "
         }
         return (words)
     })
@@ -26,7 +30,7 @@ shinyServer(function(input, output) {
         presence <- ""
         if (!input$text1 == ""){
             presence <- wordPresence(input$text1)
-            return (presence$freq)
+            return (format(presence$freq, format="d", big.mark=','))
         } else {
             return (presence)
         }
@@ -36,7 +40,7 @@ shinyServer(function(input, output) {
         percent <- ""
         if (!input$text1 == ""){
             percent <- wordPresence(input$text1)
-            return (percent$percent)
+            return (paste0(round(percent$percent, 2), "%"))
         } else {
             return (percent)
         }

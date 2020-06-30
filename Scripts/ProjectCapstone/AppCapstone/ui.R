@@ -30,6 +30,7 @@ shinyUI(fluidPage(
             textOutput("displayPresence"),
             h2("Percentual/Total:"),
             textOutput("displayPercent"),
+            
         )
     )
 ))
