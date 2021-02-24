@@ -43,5 +43,45 @@ library(HistData)
     qplot(R, geom = "histogram", binwidth = 0.05, color = I("black"))
     
     
+    set.seed(1989, sample.kind="Rounding") #if you are using R 3.6 or later
+    data("GaltonFamilies")
+    
+    female_heights <- GaltonFamilies%>%     
+      filter(gender == "female") %>%     
+      group_by(family) %>%     
+      sample_n(1) %>%     
+      ungroup() %>%     
+      select(mother, childHeight) %>%     
+      rename(daughter = childHeight)  %>% 
+      summarize(m_mother=mean(mother),
+                sd_mother=sd(mother),
+                m_daughter=mean(daughter),
+                sd_daughter=sd(daughter),
+                r=cor(mother, daughter))
+    female_heights
+    
+    mu_x <- 64.1
+    mu_y <- 64.3
+    s_x <- 2.29
+    s_y <- 2.39
+    r   <- 0.325
+    r2 <- r^2
+    
+    slope <- r * s_y/s_x
+    intercept <- mu_y - r * s_y/s_x * mu_x
+    
+    res <-  intercept + 60*slope
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
